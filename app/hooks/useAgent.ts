@@ -47,7 +47,9 @@ async function messageAgent(userMessage: string): Promise<string | null> {
  * - `isThinking`: Boolean indicating if the agent is processing a response.
  */
 export function useAgent() {
-  const [messages, setMessages] = useState<{ text: string; sender: "user" | "agent" }[]>([]);
+  const [messages, setMessages] = useState<
+    { text: string; sender: "user" | "agent" }[]
+  >([]);
   const [isThinking, setIsThinking] = useState(false);
 
   /**
@@ -64,7 +66,10 @@ export function useAgent() {
     const responseMessage = await messageAgent(input);
 
     if (responseMessage) {
-      setMessages(prev => [...prev, { text: responseMessage, sender: "agent" }]);
+      setMessages(prev => [
+        ...prev,
+        { text: responseMessage, sender: "agent" },
+      ]);
     }
 
     setIsThinking(false);

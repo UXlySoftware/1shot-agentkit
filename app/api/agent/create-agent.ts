@@ -34,14 +34,18 @@ let agent: ReturnType<typeof createReactAgent>;
  *
  * @throws {Error} If the agent initialization fails.
  */
-export async function createAgent(): Promise<ReturnType<typeof createReactAgent>> {
+export async function createAgent(): Promise<
+  ReturnType<typeof createReactAgent>
+> {
   // If agent has already been initialized, return it
   if (agent) {
     return agent;
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    throw new Error("I need an OPENAI_API_KEY in your .env file to power my intelligence.");
+    throw new Error(
+      "I need an OPENAI_API_KEY in your .env file to power my intelligence."
+    );
   }
 
   const { agentkit, walletProvider } = await prepareAgentkitAndWalletProvider();
@@ -54,7 +58,8 @@ export async function createAgent(): Promise<ReturnType<typeof createReactAgent>
     const memory = new MemorySaver();
 
     // Initialize Agent
-    const canUseFaucet = walletProvider.getNetwork().networkId == "base-sepolia";
+    const canUseFaucet =
+      walletProvider.getNetwork().networkId == "base-sepolia";
     const faucetMessage = `If you ever need funds, you can request them from the faucet.`;
     const cantUseFaucetMessage = `If you need funds, you can provide your wallet details and request funds from the user.`;
     agent = createReactAgent({

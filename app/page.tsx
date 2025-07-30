@@ -39,7 +39,9 @@ export default function Home() {
         {/* Chat Messages */}
         <div className="flex-grow overflow-y-auto space-y-3 p-2">
           {messages.length === 0 ? (
-            <p className="text-center text-gray-500">Start chatting with AgentKit...</p>
+            <p className="text-center text-gray-500">
+              Start chatting with AgentKit...
+            </p>
           ) : (
             messages.map((msg, index) => (
               <div
@@ -69,7 +71,11 @@ export default function Home() {
           )}
 
           {/* Thinking Indicator */}
-          {isThinking && <div className="text-right mr-2 text-gray-500 italic">🤖 Thinking...</div>}
+          {isThinking && (
+            <div className="text-right mr-2 text-gray-500 italic">
+              🤖 Thinking...
+            </div>
+          )}
 
           {/* Invisible div to track the bottom */}
           <div ref={messagesEndRef} />

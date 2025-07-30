@@ -66,14 +66,16 @@ export async function prepareAgentkitAndWalletProvider(): Promise<{
     let privateKey = process.env.PRIVATE_KEY as Hex;
     if (!privateKey) {
       if (fs.existsSync(WALLET_DATA_FILE)) {
-        privateKey = JSON.parse(fs.readFileSync(WALLET_DATA_FILE, "utf8")).privateKey;
+        privateKey = JSON.parse(
+          fs.readFileSync(WALLET_DATA_FILE, "utf8")
+        ).privateKey;
         console.info("Found private key in wallet_data.txt");
       } else {
         privateKey = generatePrivateKey();
         fs.writeFileSync(WALLET_DATA_FILE, JSON.stringify({ privateKey }));
         console.log("Created new private key and saved to wallet_data.txt");
         console.log(
-          "We recommend you save this private key to your .env file and delete wallet_data.txt afterwards.",
+          "We recommend you save this private key to your .env file and delete wallet_data.txt afterwards."
         );
       }
     }
@@ -94,15 +96,19 @@ export async function prepareAgentkitAndWalletProvider(): Promise<{
       pythActionProvider(),
       walletActionProvider(),
       erc20ActionProvider(),
-      new OneShotActionProvider(process.env.ONE_SHOT_API_KEY ?? "", process.env.ONE_SHOT_API_SECRET ?? ""),
+      new OneShotActionProvider(
+        process.env.ONE_SHOT_API_KEY ?? "",
+        process.env.ONE_SHOT_API_SECRET ?? ""
+      ),
     ];
-    const canUseCdpApi = process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
+    const canUseCdpApi =
+      process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
     if (canUseCdpApi) {
       actionProviders.push(
         cdpApiActionProvider({
           apiKeyId: process.env.CDP_API_KEY_ID,
           apiKeySecret: process.env.CDP_API_KEY_SECRET,
-        }),
+        })
       );
     }
     const agentkit = await AgentKit.from({
