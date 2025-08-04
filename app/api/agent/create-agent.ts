@@ -44,7 +44,7 @@ export async function createAgent(): Promise<
 
   if (!process.env.OPENAI_API_KEY) {
     throw new Error(
-      "I need an OPENAI_API_KEY in your .env file to power my intelligence."
+      "I need an OPENAI_API_KEY in your .env file to power my intelligence.",
     );
   }
 
@@ -52,7 +52,10 @@ export async function createAgent(): Promise<
 
   try {
     // Initialize LLM: https://platform.openai.com/docs/models#gpt-4o
-    const llm = new ChatOpenAI({ model: "gpt-4o-mini" });
+    const llm = new ChatOpenAI({
+      model: "gpt-4o-mini",
+      verbose: true, // Enable verbose logging
+    });
 
     const tools = await getLangChainTools(agentkit);
     const memory = new MemorySaver();

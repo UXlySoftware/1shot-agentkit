@@ -18,6 +18,7 @@
     "@langchain/core": "^0.3.19",
     "@langchain/langgraph": "^0.2.21",
     "@langchain/openai": "^0.3.14",
+    "@metamask/delegation-toolkit": "0.12.0",
     "@solana/web3.js": "^1.98.0",
     "@tanstack/react-query": "^5",
     "@uxly/1shot-client": "^1.2.0",
