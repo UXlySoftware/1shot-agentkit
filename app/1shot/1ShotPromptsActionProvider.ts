@@ -397,6 +397,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   }
 
   private async delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
