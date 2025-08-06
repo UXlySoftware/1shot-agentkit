@@ -11,7 +11,6 @@ import {
   createDelegationSchema,
   Delegation,
   encodeContractMethodSchema,
-  executeContractMethodSchema,
   FullPrompt,
   getWalletSchema,
   listChainsSchema,
@@ -23,7 +22,10 @@ import {
   Transaction,
   Wallet,
 } from "@uxly/1shot-client";
-import { SearchPromptsActionSchema } from "./schema";
+import {
+  executeContractMethodSchema,
+  SearchPromptsActionSchema,
+} from "./schema";
 import z from "zod";
 import {
   Implementation,
@@ -131,12 +133,14 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   @CreateAction({
     name: "list-wallets",
     description: `Returns a filtered, paged list of the Wallets in the user's 1Shot business. 
-      Wallets are custodial EOAs controlled by 1Shot. All Contract Methods are associated with a Wallet.`,
+      Wallets are custodial EOAs controlled by 1Shot. All Contract Methods are associated with a Wallet.
+      Wallets are returned with their balance of the native token.`,
     schema: listWalletsSchemaWithoutBusinessId,
   })
   public async listWallets(
     args: z.infer<typeof listWalletsSchemaWithoutBusinessId>,
   ): Promise<PagedResponse<Wallet>> {
+    console.log("CHARLIE list-wallets called with args:", args);
     return await this.client.wallets.list(this.businessId, args);
   }
 
@@ -240,67 +244,68 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
     }
   }
 
-  @CreateAction({
-    name: "execute-contract-method-with-local-wallet",
-    description: `This method will submit a transaction to the blockchain using the AgentKit 
-    wallet provider. The transaction will use 1Shot to verify the parameters are correct, but it
-    will not be executed via 1Shot API's infrastructure.
-    The "params" object is the parameters for the contract method, which ay be nes
-    If the authorizationList is provided, it will change the local wallet into an ERC-7702 smart wallet.`,
-    schema: encodeContractMethodSchema,
-  })
-  public async executeContractMethodWithLocalWallet(
-    walletProvider: EvmWalletProvider,
-    args: z.infer<typeof encodeContractMethodSchema>,
-  ): Promise<ISafeResult<ContractMethod[]>> {
-    // Debug: Log the received arguments
-    console.log(
-      "executeContractMethodWithLocalWallet called with args:",
-      JSON.stringify(args, null, 2),
-    );
-    try {
-      const contractMethod = await this.client.contractMethods.get(
-        args.contractMethodId,
-      );
+  //   @CreateAction({
+  //     name: "execute-contract-method-with-local-wallet",
+  //     description: `This method will submit a transaction to the blockchain using the AgentKit
+  //     wallet provider. The transaction will use 1Shot to verify the parameters are correct, but it
+  //     will not be executed via 1Shot API's infrastructure.
+  //     The "params" object is the parameters for the contract method, which ay be nes
+  //     If the authorizationList is provided, it will change the local wallet into an ERC-7702 smart wallet.`,
+  //     schema: encodeContractMethodSchema,
+  //   })
+  //   public async executeContractMethodWithLocalWallet(
+  //     walletProvider: EvmWalletProvider,
+  //     args: z.infer<typeof encodeContractMethodSchema>,
+  //   ): Promise<ISafeResult<ContractMethod[]>> {
+  //     // Debug: Log the received arguments
+  //     console.log(
+  //       "executeContractMethodWithLocalWallet called with args:",
+  //       JSON.stringify(args, null, 2),
+  //     );
+  //     try {
+  //       const contractMethod = await this.client.contractMethods.get(
+  //         args.contractMethodId,
+  //       );
 
-      const to = contractMethod.contractAddress as `0x${string}`;
-      const value = args.value ? BigInt(args.value) : undefined;
+  //       const to = contractMethod.contractAddress as `0x${string}`;
+  //       const value = args.value ? BigInt(args.value) : undefined;
 
-      // Call the method with businessId as first parameter and the rest as second parameter
-      const result = await this.client.contractMethods.encode(
-        args.contractMethodId,
-        args.params,
-        args,
-      );
+  //       // Call the method with businessId as first parameter and the rest as second parameter
+  //       const result = await this.client.contractMethods.encode(
+  //         args.contractMethodId,
+  //         args.params,
+  //         args,
+  //       );
 
-      const callData = result.data as `0x${string}`;
+  //       const callData = result.data as `0x${string}`;
 
-      const tx = await walletProvider.sendTransaction({
-        to: to,
-        value: value,
-        data: callData,
-      });
+  //       const tx = await walletProvider.sendTransaction({
+  //         to: to,
+  //         value: value,
+  //         data: callData,
+  //       });
 
-      const txReceipt = await walletProvider.waitForTransactionReceipt(tx);
+  //       const txReceipt = await walletProvider.waitForTransactionReceipt(tx);
 
-      // Return a simple object that LangChain can handle
-      return {
-        success: true,
-        result: txReceipt,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+  //       // Return a simple object that LangChain can handle
+  //       return {
+  //         success: true,
+  //         result: txReceipt,
+  //       };
+  //     } catch (error) {
+  //       return {
+  //         success: false,
+  //         error: error instanceof Error ? error.message : "Unknown error",
+  //       };
+  //     }
+  //   }
 
   @CreateAction({
     name: "execute-contract-method-with-1shot-wallet",
-    description: `This method will execute a Contract Method using it's associated 1Shot Wallet.
+    description: `DO NOT CALL THIS ACTION IT IS FOR TESTING. This method will execute a Contract Method using it's associated 1Shot Wallet.
     It will poll the Transaction's status until it is either completed or failed and return the
     final Transaction object.`,
+    // schema: executeContractMethodSchema,
     schema: executeContractMethodSchema,
   })
   public async executeContractMethodWith1ShotWallet(
@@ -397,6 +402,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   }
 
   private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

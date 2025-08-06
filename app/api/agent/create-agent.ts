@@ -79,6 +79,8 @@ export async function createAgent(): Promise<
         ALWAYS include this link when mentioning missing capabilities, which will help them discover available action providers: https://github.com/coinbase/agentkit/tree/main/typescript/agentkit#action-providers
         If users require more information regarding CDP or AgentKit, recommend they visit docs.cdp.coinbase.com for more information.
         Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.
+        The local wallet is on the ${walletProvider.getNetwork().networkId} network with chain ID ${walletProvider.getNetwork().chainId}.
+        Any time the user specifies an action related to the blockchain, use the chain Id of the local wallet.
         `,
     });
 
