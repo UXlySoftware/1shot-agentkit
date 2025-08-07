@@ -92,10 +92,10 @@ export async function prepareAgentkitAndWalletProvider(): Promise<{
 
     // Initialize AgentKit: https://docs.cdp.coinbase.com/agentkit/docs/agent-actions
     const actionProviders: ActionProvider[] = [
-      wethActionProvider(),
-      pythActionProvider(),
+      // wethActionProvider(),
+      // pythActionProvider(),
       walletActionProvider(),
-      erc20ActionProvider(),
+      // erc20ActionProvider(),
       new OneShotActionProvider(
         process.env.ONE_SHOT_API_KEY ?? "INVALID_API_KEY",
         process.env.ONE_SHOT_API_SECRET ?? "INVALID_API_SECRET",

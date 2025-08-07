@@ -5,47 +5,19 @@ export const SearchPromptsActionSchema = z.object({
   query: z.string(),
 });
 
-export const contractMethodParamsSchema1: z.ZodType<{
-  [key: string]: string | number | boolean | null | undefined;
-}> = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
-
-export const contractMethodParamsSchema2: z.ZodType<{
-  [key: string]:
-    | string
-    | number
-    | boolean
-    | null
-    | undefined
-    | { [key: string]: any }
-    | Array<any>;
-}> = z.record(
+export const contractMethodParamsSchema = z.record(
   z.string(),
   z.union([
     z.string(),
-    z.number(),
     z.boolean(),
-    contractMethodParamsSchema1,
-    z.array(contractMethodParamsSchema1),
-  ]),
-);
-
-export const contractMethodParamsSchema: z.ZodType<{
-  [key: string]:
-    | string
-    | number
-    | boolean
-    | null
-    | undefined
-    | { [key: string]: any }
-    | Array<any>;
-}> = z.record(
-  z.string(),
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    contractMethodParamsSchema1,
-    z.array(contractMethodParamsSchema1),
+    z.record(z.string(), z.union([z.string(), z.boolean()])),
+    z.array(
+      z.union([
+        z.string(),
+        z.boolean(),
+        z.record(z.string(), z.union([z.string(), z.boolean()])),
+      ]),
+    ),
   ]),
 );
 
@@ -57,7 +29,9 @@ export const executeContractMethodSchema = z
       .describe(
         "The ID of the contractMethod to execute. Identifies which contractMethod to run",
       ),
-    params: contractMethodParamsSchema,
+    params: contractMethodParamsSchema.describe(
+      "The parameters to pass to the contractMethod",
+    ),
     walletId: z
       .string()
       .uuid()
@@ -92,4 +66,44 @@ export const executeContractMethodSchema = z
   })
   .describe(
     "Parameters required to execute a contractMethod. Includes the function parameters, optional escrow wallet override, optional memo, optional value for payable methods, and optional contract address override",
+  );
+
+export const encodeContractMethodSchema = z
+  .object({
+    contractMethodId: z
+      .string()
+      .uuid()
+      .describe(
+        "The ID of the contractMethod to encode. Identifies which contractMethod to encode",
+      ),
+    params: contractMethodParamsSchema,
+    authorizationList: z
+      .array(erc7702AuthorizationSchema)
+      .optional()
+      .describe(
+        "A list of authorizations for the contractMethod. If you are using ERC-7702, you must provide at least one authorization",
+      ),
+    value: z
+      .string()
+      .optional()
+      .describe(
+        "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error",
+      ),
+  })
+  .describe(
+    "Parameters for encoding a contractMethod - returns hex string of encoded data. Used to call the contractMethod directly on the blockchain",
+  );
+
+export const readContractMethodSchema = z
+  .object({
+    contractMethodId: z
+      .string()
+      .uuid()
+      .describe(
+        "The ID of the contractMethod to read. Identifies which contractMethod to query",
+      ),
+    params: contractMethodParamsSchema,
+  })
+  .describe(
+    "Parameters for reading a contractMethod - gets result of view or pure function. Used for reading blockchain state without making changes",
   );

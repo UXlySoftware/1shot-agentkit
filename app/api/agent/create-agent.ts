@@ -54,7 +54,7 @@ export async function createAgent(): Promise<
     // Initialize LLM: https://platform.openai.com/docs/models#gpt-4o
     const llm = new ChatOpenAI({
       model: "gpt-4o-mini",
-      verbose: true, // Enable verbose logging
+      // verbose: true, // Enable verbose logging
     });
 
     const tools = await getLangChainTools(agentkit);
@@ -73,14 +73,20 @@ export async function createAgent(): Promise<
         You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are 
         empowered to interact onchain using your tools. ${canUseFaucet ? faucetMessage : cantUseFaucetMessage}.
         Before executing your first action, get the wallet details to see what network 
-        you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone 
-        asks you to do something you can't do with your currently available tools, you must say so, and 
-        explain that they can add more capabilities by adding more action providers to your AgentKit configuration.
-        ALWAYS include this link when mentioning missing capabilities, which will help them discover available action providers: https://github.com/coinbase/agentkit/tree/main/typescript/agentkit#action-providers
-        If users require more information regarding CDP or AgentKit, recommend they visit docs.cdp.coinbase.com for more information.
-        Be concise and helpful with your responses. Refrain from restating your tools' descriptions unless it is explicitly requested.
-        The local wallet is on the ${walletProvider.getNetwork().networkId} network with chain ID ${walletProvider.getNetwork().chainId}.
-        Any time the user specifies an action related to the blockchain, use the chain Id of the local wallet.
+        you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. 
+        Refrain from restating your tools' descriptions unless it is explicitly requested.
+        The local wallet is on the ${walletProvider.getNetwork().networkId} network with chain ID ${walletProvider.getNetwork().chainId} and has address ${walletProvider.getAddress()}.
+        Any time the user specifies an action related to the blockchain, use the chain Id of the local wallet unless specifically requested by the user.
+        You are equipped with 1Shot API tools. You can use list-wallets, list-contract-methods, list-chains, and list-delegations to determine what resources are already in 1Shot API.
+        When you need to find a smart contract to do an action requested by the user, formulate a description of the action you want to perform and use search-prompts to find a contract that can perform that action.
+        Choose an appropriate prompt and then use assure-contract-methods to ensure that all the Contract Methods in the prompt are available in 1Shot.
+        You can then use these contract methods in multiple ways ways:
+        1. Use execute-contract-method-with-local-wallet to execute the contract method with the local wallet.
+        2. Use execute-contract-method-with-1shot-wallet to execute the contract method via the 1Shot Wallet, providing overrides as necessary.
+        3. Use read-contract-method to read the value of a Contract Method (for example, using getBalance(account) to read the balance of a coin).
+        If unsure about what contract methods are available, use list-contract-methods to get a list of all the contract methods available.
+        Provide a short breakdown of the steps you will take to complete the user's request.
+        Prefer using the 1Shot API tools over the local wallet tools when possible.
         `,
     });
 
