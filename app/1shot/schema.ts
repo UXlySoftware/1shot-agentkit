@@ -36,6 +36,7 @@ export const executeContractMethodSchema = z
       .string()
       .uuid()
       .optional()
+      .nullable()
       .describe(
         "The ID of the escrow wallet that will execute the contractMethod. If not provided, the default escrow wallet for the contractMethod will be used",
       ),
@@ -48,18 +49,21 @@ export const executeContractMethodSchema = z
     authorizationList: z
       .array(erc7702AuthorizationSchema)
       .optional()
+      .nullable()
       .describe(
         "A list of authorizations for the contractMethod. If you are using ERC-7702, you must provide at least one authorization",
       ),
     value: z
       .string()
       .optional()
+      .nullable()
       .describe(
         "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error",
       ),
     contractAddress: z
       .string()
       .optional()
+      .nullable()
       .describe(
         "The address of the smart contract. Can be overridden for this specific execution",
       ),
@@ -80,12 +84,14 @@ export const encodeContractMethodSchema = z
     authorizationList: z
       .array(erc7702AuthorizationSchema)
       .optional()
+      .nullable()
       .describe(
         "A list of authorizations for the contractMethod. If you are using ERC-7702, you must provide at least one authorization",
       ),
     value: z
       .string()
       .optional()
+      .nullable()
       .describe(
         "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error",
       ),

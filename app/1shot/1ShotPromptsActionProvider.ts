@@ -237,7 +237,10 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
       will not be executed via 1Shot API's infrastructure.
       The "params" object is the parameters for the contract method, which may be nested.
       If the authorizationList is provided, it will change the local wallet into an ERC-7702 smart wallet.
-      Only use this action if the contract method's stateMutability is "nonpayable" or "payable".`,
+      Only use this action if the contract method's stateMutability is "nonpayable" or "payable".
+      Do not provide any other optional parameters unless they are specifically needed.
+      Specifically, do not provide a value for the authorizationList parameter.
+      Do not provide a value parameter unless the contract method is payable.`,
     schema: encodeContractMethodSchema,
   })
   public async executeContractMethodWithLocalWallet(
@@ -254,17 +257,21 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
         args.contractMethodId,
       );
 
+      console.log("CHARLIE contractMethod:", contractMethod);
+
       const to = contractMethod.contractAddress as `0x${string}`;
       const value = args.value ? BigInt(args.value) : undefined;
 
       // Call the method with businessId as first parameter and the rest as second parameter
-      const result = await this.client.contractMethods.encode(
+      const encodeResult = await this.client.contractMethods.encode(
         args.contractMethodId,
         args.params,
         args,
       );
 
-      const callData = result.data as `0x${string}`;
+      console.log("CHARLIE encode result:", encodeResult);
+
+      const callData = encodeResult.data as `0x${string}`;
 
       const tx = await walletProvider.sendTransaction({
         to: to,
@@ -272,7 +279,11 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
         data: callData,
       });
 
+      console.log("CHARLIE tx:", tx);
+
       const txReceipt = await walletProvider.waitForTransactionReceipt(tx);
+
+      console.log("CHARLIE txReceipt:", txReceipt);
 
       // Return a simple object that LangChain can handle
       return {
@@ -280,6 +291,10 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
         result: txReceipt,
       };
     } catch (error) {
+      console.log(
+        "CHARLIE execute-contract-method-with-local-wallet error:",
+        error,
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
@@ -292,26 +307,45 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
     description: `This method will execute a Contract Method using its associated 1Shot Wallet.
     It will poll the Transaction's status until it is either completed or failed and return the
     final Transaction object.
-    Only use this action if the contract method's stateMutability is "nonpayable" or "payable".`,
-    // schema: executeContractMethodSchema,
+    Only use this action if the contract method's stateMutability is "nonpayable" or "payable".
+    Always provide a memo parameter to the action, but do not provide any other optional parameters unless they are specifically needed. 
+    Most of those values are built into the 1Shot Contract Method.
+    Specifically, do not provide a value for the authorizationList parameter.`,
     schema: executeContractMethodSchema,
   })
   public async executeContractMethodWith1ShotWallet(
     args: z.infer<typeof executeContractMethodSchema>,
-  ): Promise<Transaction> {
-    console.log("CHARLIE execute-contract-method-with-1shot-wallet called with args:", args);
-    let tx = await this.client.contractMethods.execute(
-      args.contractMethodId,
-      args.params,
+  ): Promise<ISafeResult<Transaction>> {
+    console.log(
+      "CHARLIE execute-contract-method-with-1shot-wallet called with args:",
       args,
     );
+    try {
+      let tx = await this.client.contractMethods.execute(
+        args.contractMethodId,
+        args.params,
+        args,
+      );
 
-    // Now we start polling the transaction status until it is either completed or failed
-    while (tx.status != "Completed" && tx.status != "Failed") {
-      await this.delay(2000);
-      tx = await this.client.transactions.get(tx.id);
+      // Now we start polling the transaction status until it is either completed or failed
+      while (tx.status != "Completed" && tx.status != "Failed") {
+        await this.delay(2000);
+        tx = await this.client.transactions.get(tx.id);
+      }
+      return {
+        success: true,
+        result: tx,
+      };
+    } catch (error) {
+      console.log(
+        "CHARLIE execute-contract-method-with-1shot-wallet error:",
+        error,
+      );
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
-    return tx;
   }
 
   @CreateAction({
@@ -323,12 +357,24 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async readContractMethod(
     walletProvider: EvmWalletProvider,
     args: z.infer<typeof readContractMethodSchema>,
-  ): Promise<Transaction> {
+  ): Promise<ISafeResult<Transaction>> {
     console.log("CHARLIE read-contract-method called with args:", args);
-    return await this.client.contractMethods.read(
-      args.contractMethodId,
-      args.params,
-    );
+    try {
+      const readResult = await this.client.contractMethods.read(
+        args.contractMethodId,
+        args.params,
+      );
+      return {
+        success: true,
+        result: readResult,
+      };
+    } catch (error) {
+      console.log("CHARLIE read-contract-method error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 
   @CreateAction({
@@ -409,6 +455,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   }
 
   private async delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

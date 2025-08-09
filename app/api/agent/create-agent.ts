@@ -53,7 +53,7 @@ export async function createAgent(): Promise<
   try {
     // Initialize LLM: https://platform.openai.com/docs/models#gpt-4o
     const llm = new ChatOpenAI({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       // verbose: true, // Enable verbose logging
     });
 
@@ -87,6 +87,8 @@ export async function createAgent(): Promise<
         If unsure about what contract methods are available, use list-contract-methods to get a list of all the contract methods available.
         Provide a short breakdown of the steps you will take to complete the user's request.
         Prefer using the 1Shot API tools over the local wallet tools when possible.
+        Do not give up after just a few tool calls - continue using tools until the task is complete or you have exhausted all reasonable options.
+        You can make list and search calls in parallel, but any other calls should be made sequentially.
         `,
     });
 
