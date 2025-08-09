@@ -35,7 +35,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-grow items-center justify-center text-black dark:text-white w-full h-full">
-      <div className="w-full max-w-2xl h-[70vh] bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 flex flex-col">
+      <div className="w-full max-w-2xl h-[70vh] bg-black/40 backdrop-blur-sm shadow-lg rounded-lg p-4 flex flex-col border border-gray-700/50">
         {/* Chat Messages */}
         <div className="flex-grow overflow-y-auto space-y-3 p-2">
           {messages.length === 0 ? (
@@ -49,7 +49,7 @@ export default function Home() {
                 className={`p-3 rounded-2xl shadow ${
                   msg.sender === "user"
                     ? "bg-[#0052FF] text-white self-end"
-                    : "bg-gray-100 dark:bg-gray-700 self-start"
+                    : "bg-gray-800/80 backdrop-blur-sm text-white self-start border border-gray-700/50"
                 }`}
               >
                 <ReactMarkdown
@@ -85,7 +85,7 @@ export default function Home() {
         <div className="flex items-center space-x-2 mt-2">
           <input
             type="text"
-            className="flex-grow p-2 rounded border dark:bg-gray-700 dark:border-gray-600"
+            className="flex-grow p-2 rounded border bg-black/40 backdrop-blur-sm border-gray-700/50 text-white placeholder-gray-400"
             placeholder={"Type a message..."}
             value={input}
             onChange={e => setInput(e.target.value)}

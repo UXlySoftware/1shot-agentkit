@@ -23,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-gray-100 dark:bg-gray-900 dark flex flex-col min-h-screen">
+    <html lang="en" className="dark">
+      <body className="flex flex-col min-h-screen">
         {/* Header (Fixed Height) */}
         <header className="py-6 flex items-center justify-between relative">
           <img

@@ -109,7 +109,9 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
     name: "list-wallets",
     description: `Returns a filtered, paged list of the Wallets in the user's 1Shot business. 
       Wallets are custodial EOAs controlled by 1Shot. All Contract Methods are associated with a Wallet.
-      Wallets are returned with their balance of the native token.`,
+      Wallets are returned with their balance of the native token.
+      Only provide a chainId as a filter unless you know for sure a specific value for the other filters.
+      This is a paged list, so if you do not find the Contract Method you are looking for but there are more pages, use the tool again.`,
     schema: listWalletsSchemaWithoutBusinessId,
   })
   public async listWallets(
