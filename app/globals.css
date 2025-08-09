@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: 220 100% 50%; /* Blue */
+  --accent: 25 95% 53%; /* Orange */
+}
+
+body {
+  background-color: #000000; /* Black background */
+  background-image:
+    /* Top primary (blue) glow, more focused towards top-center/top-right */
+    radial-gradient(
+      ellipse 70% 50% at 60% 15%,
+      hsl(var(--primary) / 0.4),
+      transparent 70%
+    ),
+    /* Accent (orange) glow, positioned to affect hero, from top-left/mid-left */
+      radial-gradient(
+        ellipse 80% 60% at 25% 35%,
+        hsl(var(--accent) / 0.5),
+        transparent 70%
+      ),
+    /* Purple glow for bottom-right, for variety in lower page sections */
+      radial-gradient(
+        ellipse 70% 50% at 80% 90%,
+        hsl(280 70% 50% / 0.45),
+        transparent 70%
+      );
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Ensures gradient is fixed relative to viewport */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth;
+}
+
+/* Ensure the background shows through all elements */
+html {
+  background: transparent;
+}
+
+/* Make sure the main container doesn't block the background */
+main {
+  background: transparent;
+}
