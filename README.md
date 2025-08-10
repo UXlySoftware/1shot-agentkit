@@ -4,6 +4,33 @@
 
 This repository implements an Action Provider for the AgentKit onchain agents framework. Specifically, it injects any smart contract imported into the developer's 1Shot API business account as a callable tool with overlayed prompt instructs that can be writted/edited by the developer or other [1Shot Prompts](https://1shotapi.com/prompts) contributors. 
 
+## Contracts as Tools
+
+1Shot Prompts allows contributed to write high-quality prompt overlays for verified smart contracts in the EVM ecoystem and publish this templates for other developers to import into their 1Shot API context. When an agent hits the `list-methods` endpoint, the available smart contract methods and their associated annotations are returned which can then be leveraged by the LLM for better reasoning about tool calling. 
+
+## Action Provider
+
+1Shot Prompts can be imported as an AgentKit action provider: 
+
+```javascript
+    // Initialize AgentKit: https://docs.cdp.coinbase.com/agentkit/docs/agent-actions
+    const actionProviders: ActionProvider[] = [
+
+      walletActionProvider(),
+      new OneShotActionProvider(
+        process.env.ONE_SHOT_API_KEY ?? "INVALID_API_KEY",
+        process.env.ONE_SHOT_API_SECRET ?? "INVALID_API_SECRET",
+        process.env.ONE_SHOT_BUSINESS_ID ?? "INVALID_BUSINESS_ID",
+      ),
+    ];
+```
+
+Using only this action provider, an AgentKit-powered agent can read and write to any smart contract on any EVM network. The Action Provider supports 3 different execution modes:
+
+1. Submission through the agent's wallet
+2. Submission through 1Shot API's server-side wallets
+3. Delegated execution through the use of 7702-style smart wallets. 
+
 ## Development Instructions
 This is a [Next.js](https://nextjs.org) project bootstrapped with `create-onchain-agent`.
 
