@@ -36,7 +36,7 @@ import {
   createCaveatBuilder,
 } from "@metamask/delegation-toolkit";
 import { WalletClient } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base, baseSepolia } from "viem/chains";
 
 // Create a new schema without businessId by omitting it from the original schema
 const assureContractMethodsFromPromptSchemaWithoutBusinessId =
@@ -446,7 +446,8 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
       // We take the data in the args and create a Delegation object and sign it with the local wallet
       const walletProviderAsWalletClient =
         walletProvider as unknown as WalletClient;
-      walletProviderAsWalletClient.chain = baseSepolia;
+      //walletProviderAsWalletClient.chain = baseSepolia;
+      walletProviderAsWalletClient.chain = base;
       const delegatorSmartAccount = await toMetaMaskSmartAccount({
         client: walletProviderAsWalletClient,
         implementation: Implementation.Stateless7702,
