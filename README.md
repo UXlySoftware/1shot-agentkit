@@ -15,7 +15,6 @@ This repository implements an Action Provider for the AgentKit onchain agents fr
 ```javascript
     // Initialize AgentKit: https://docs.cdp.coinbase.com/agentkit/docs/agent-actions
     const actionProviders: ActionProvider[] = [
-
       walletActionProvider(),
       new OneShotActionProvider(
         process.env.ONE_SHOT_API_KEY ?? "INVALID_API_KEY",
@@ -23,6 +22,22 @@ This repository implements an Action Provider for the AgentKit onchain agents fr
         process.env.ONE_SHOT_BUSINESS_ID ?? "INVALID_BUSINESS_ID",
       ),
     ];
+
+    const canUseCdpApi =
+      process.env.CDP_API_KEY_ID && process.env.CDP_API_KEY_SECRET;
+    if (canUseCdpApi) {
+      actionProviders.push(
+        cdpApiActionProvider({
+          apiKeyId: process.env.CDP_API_KEY_ID,
+          apiKeySecret: process.env.CDP_API_KEY_SECRET,
+        }),
+      );
+    }
+    
+    const agentkit = await AgentKit.from({
+      walletProvider,
+      actionProviders,
+    });
 ```
 
 Using only this action provider, an AgentKit-powered agent can read and write to any smart contract on any EVM network. The Action Provider supports 3 different execution modes:
