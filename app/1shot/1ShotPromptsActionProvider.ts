@@ -26,6 +26,7 @@ import {
   encodeContractMethodSchema,
   SearchPromptsActionSchema,
   readContractMethodSchema,
+  executeAsDelegatorContractMethodSchema,
 } from "./schema";
 import z from "zod";
 import {
@@ -35,6 +36,7 @@ import {
   createCaveatBuilder,
 } from "@metamask/delegation-toolkit";
 import { WalletClient } from "viem";
+import { baseSepolia } from "viem/chains";
 
 // Create a new schema without businessId by omitting it from the original schema
 const assureContractMethodsFromPromptSchemaWithoutBusinessId =
@@ -50,17 +52,15 @@ const listContractMethodsSchemaWithoutBusinessId =
     businessId: true,
   });
 
-const createDelegationSchemaWithoutDelegationData = createDelegationSchema
-  .omit({
+const createDelegationSchemaWithoutDelegationData = createDelegationSchema.omit(
+  {
     delegationData: true,
-  })
-  .extend({
-    walletId: z
-      .string()
-      .uuid()
-      .describe(
-        "The UUID of the 1ShotWallet to which the local wallet will delegate control.",
-      ),
+  },
+);
+
+const executeAsDelegatorContractMethodSchemaWithoutDelegatorAddress =
+  executeAsDelegatorContractMethodSchema.omit({
+    delegatorAddress: true,
   });
 
 // Define the return type for better type safety
@@ -101,7 +101,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async listChains(
     args: z.infer<typeof listChainsSchema>,
   ): Promise<PagedResponse<ChainInfo>> {
-    console.log("CHARLIE list-wallets called with args:", args);
     return await this.client.chains.list(args);
   }
 
@@ -117,7 +116,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async listWallets(
     args: z.infer<typeof listWalletsSchemaWithoutBusinessId>,
   ): Promise<PagedResponse<Wallet>> {
-    console.log("CHARLIE list-wallets called with args:", args);
     return await this.client.wallets.list(this.businessId, args);
   }
 
@@ -133,7 +131,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async listContractMethods(
     args: z.infer<typeof listContractMethodsSchemaWithoutBusinessId>,
   ): Promise<PagedResponse<ContractMethod>> {
-    console.log("CHARLIE list-contract-methods called with args:", args);
     return await this.client.contractMethods.list(this.businessId, args);
   }
 
@@ -146,7 +143,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async listDelegations(
     args: z.infer<typeof listDelegationsSchema>,
   ): Promise<PagedResponse<Delegation>> {
-    console.log("CHARLIE list-delegations called with args:", args);
     return await this.client.wallets.listDelegations(args.walletId, args);
   }
 
@@ -160,7 +156,6 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async getWallet(
     args: z.infer<typeof getWalletSchema>,
   ): Promise<Wallet> {
-    console.log("CHARLIE get-wallet called with args:", args);
     return await this.client.wallets.get(args.walletId, args.includeBalances);
   }
 
@@ -349,6 +344,59 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   }
 
   @CreateAction({
+    name: "execute-contract-method-as-delegator",
+    description: `This method will execute a Contract Method using its associated 1Shot Wallet.
+    This method will use a delegation on file (created with the delegate-to-1shot-wallet action),
+    so that the transaction is executed by the 1Shot Wallet and uses the gas in that wallet, but it otherwise executes as if it were the local wallet.
+    It will poll the Transaction's status until it is either completed or failed and return the final Transaction object.
+    Only use this action if the contract method's stateMutability is "nonpayable" or "payable".
+    Always provide a memo parameter to the action, but do not provide any other optional parameters unless they are specifically needed. 
+    Most of those values are built into the 1Shot Contract Method.
+    Specifically, do not provide a value for the authorizationList parameter.`,
+    schema: executeAsDelegatorContractMethodSchemaWithoutDelegatorAddress,
+  })
+  public async executeContractMethodWith1ShotWalletAsDelegator(
+    walletProvider: EvmWalletProvider,
+    args: z.infer<
+      typeof executeAsDelegatorContractMethodSchemaWithoutDelegatorAddress
+    >,
+  ): Promise<ISafeResult<Transaction>> {
+    console.log(
+      "CHARLIE execute-contract-method-as-delegator called with args:",
+      args,
+    );
+
+    const walletAddress = walletProvider.getAddress() as `0x${string}`;
+    try {
+      let tx = await this.client.contractMethods.executeAsDelegator(
+        args.contractMethodId,
+        walletAddress,
+        args.params,
+        args,
+      );
+
+      // Now we start polling the transaction status until it is either completed or failed
+      while (tx.status != "Completed" && tx.status != "Failed") {
+        await this.delay(2000);
+        tx = await this.client.transactions.get(tx.id);
+      }
+      return {
+        success: true,
+        result: tx,
+      };
+    } catch (error) {
+      console.log(
+        "CHARLIE execute-contract-method-with-1shot-wallet error:",
+        error,
+      );
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  @CreateAction({
     name: "read-contract-method",
     description: `This will return the value of a Contract Method by reading the blockchain. 
     You can only use this with Contract Methods who's stateMutability is either "view" or "pure".`,
@@ -387,71 +435,95 @@ export class OneShotActionProvider extends ActionProvider<WalletProvider> {
   public async delegateTo1ShotWallet(
     walletProvider: EvmWalletProvider,
     args: z.infer<typeof createDelegationSchemaWithoutDelegationData>,
-  ): Promise<Delegation> {
+  ): Promise<ISafeResult<Delegation>> {
     console.log("CHARLIE delegate-to-1shot-wallet called with args:", args);
-    const wallet = await this.client.wallets.get(args.walletId);
+    try {
+      const wallet = await this.client.wallets.get(args.walletId);
 
-    const walletAddress = walletProvider.getAddress() as `0x${string}`;
+      const walletAddress = walletProvider.getAddress() as `0x${string}`;
+      const network = walletProvider.getNetwork();
 
-    // We take the data in the args and create a Delegation object and sign it with the local wallet
-    const delegatorSmartAccount = await toMetaMaskSmartAccount({
-      client: walletProvider as unknown as WalletClient,
-      implementation: Implementation.Stateless7702,
-      address: walletAddress, // "0x63c0c19a282a1B52b07dD5a65b58948A07DAE32B",
-      // Holy crap I hate this, but the walletProvider supports the methods signatory needs
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      signatory: { walletClient: walletProvider as any },
-    });
+      // We take the data in the args and create a Delegation object and sign it with the local wallet
+      const walletProviderAsWalletClient =
+        walletProvider as unknown as WalletClient;
+      walletProviderAsWalletClient.chain = baseSepolia;
+      const delegatorSmartAccount = await toMetaMaskSmartAccount({
+        client: walletProviderAsWalletClient,
+        implementation: Implementation.Stateless7702,
+        address: walletAddress, // "0x63c0c19a282a1B52b07dD5a65b58948A07DAE32B",
+        // Holy crap I hate this, but the walletProvider supports the methods signatory needs
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        signatory: { walletClient: walletProvider as any },
+      });
 
-    const environment = delegatorSmartAccount.environment;
+      const environment = delegatorSmartAccount.environment;
 
-    const caveatBuilder = createCaveatBuilder(environment, {
-      allowEmptyCaveats: true,
-    });
+      const caveatBuilder = createCaveatBuilder(environment, {
+        allowEmptyCaveats: true,
+      });
 
-    if (args.contractAddresses != null && args.contractAddresses.length > 0) {
-      caveatBuilder.addCaveat(
-        "allowedTargets",
-        args.contractAddresses as `0x${string}`[],
+      if (args.contractAddresses != null && args.contractAddresses.length > 0) {
+        caveatBuilder.addCaveat(
+          "allowedTargets",
+          args.contractAddresses as `0x${string}`[],
+        );
+      }
+
+      if (args.methods != null && args.methods.length > 0) {
+        caveatBuilder.addCaveat("allowedMethods", args.methods);
+      }
+
+      if (args.startTime != null && args.endTime != null) {
+        caveatBuilder.addCaveat("timestamp", args.startTime, args.endTime);
+      } else if (args.startTime != null) {
+        caveatBuilder.addCaveat("timestamp", args.startTime, 0);
+      } else if (args.endTime != null) {
+        caveatBuilder.addCaveat("timestamp", 0, args.endTime);
+      }
+
+      const caveats = caveatBuilder.build();
+
+      const delegation = createDelegation({
+        from: walletProvider.getAddress() as `0x${string}`,
+        to: wallet.accountAddress as `0x${string}`,
+        caveats: caveats,
+      });
+
+      const signature = await delegatorSmartAccount.signDelegation({
+        delegation,
+      });
+
+      // Store the signature in the delegation
+      delegation.signature = signature;
+
+      // Now we need to send the delegation to the BE to store.
+      const delegationString = JSON.stringify(delegation);
+
+      const params = {
+        delegationData: delegationString,
+        startTime: args.startTime ?? undefined,
+        endTime: args.endTime ?? undefined,
+        contractAddresses:
+          args.contractAddresses == null ? [] : args.contractAddresses,
+        methods: args.methods == null ? [] : args.methods,
+      };
+
+      const createDelegationResult = await this.client.wallets.createDelegation(
+        args.walletId,
+        params,
       );
+
+      return {
+        success: true,
+        result: createDelegationResult,
+      };
+    } catch (error) {
+      console.log("CHARLIE delegate-to-1shot-wallet error:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
-
-    if (args.methods != null && args.methods.length > 0) {
-      caveatBuilder.addCaveat("allowedMethods", args.methods);
-    }
-
-    if (args.startTime != null && args.endTime != null) {
-      caveatBuilder.addCaveat("timestamp", args.startTime, args.endTime);
-    } else if (args.startTime != null) {
-      caveatBuilder.addCaveat("timestamp", args.startTime, 0);
-    } else if (args.endTime != null) {
-      caveatBuilder.addCaveat("timestamp", 0, args.endTime);
-    }
-
-    const caveats = caveatBuilder.build();
-
-    const delegation = createDelegation({
-      from: walletProvider.getAddress() as `0x${string}`,
-      to: wallet.accountAddress as `0x${string}`,
-      caveats: caveats,
-    });
-
-    const signature = await delegatorSmartAccount.signDelegation({
-      delegation,
-    });
-
-    // Store the signature in the delegation
-    delegation.signature = signature;
-
-    // Now we need to send the delegation to the BE to store.
-    const delegationString = JSON.stringify(delegation);
-
-    return await this.client.wallets.createDelegation(args.walletId, {
-      delegationData: delegationString,
-      startTime: args.startTime,
-      endTime: args.endTime,
-      contractAddresses: args.contractAddresses,
-    });
   }
 
   private async delay(ms: number): Promise<void> {

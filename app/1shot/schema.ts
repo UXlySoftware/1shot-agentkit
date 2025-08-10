@@ -43,6 +43,7 @@ export const executeContractMethodSchema = z
     memo: z
       .string()
       .optional()
+      .nullable()
       .describe(
         "Optional text supplied when the contractMethod is executed. This can be a note to the user about why the execution was done, or formatted information such as JSON that can be used by the user's system",
       ),
@@ -70,6 +71,47 @@ export const executeContractMethodSchema = z
   })
   .describe(
     "Parameters required to execute a contractMethod. Includes the function parameters, optional escrow wallet override, optional memo, optional value for payable methods, and optional contract address override",
+  );
+
+export const executeAsDelegatorContractMethodSchema = z
+  .object({
+    contractMethodId: z
+      .string()
+      .uuid()
+      .describe(
+        "The ID of the contractMethod to execute as a delegator. Identifies which contractMethod to run",
+      ),
+    params: contractMethodParamsSchema,
+    walletId: z
+      .string()
+      .uuid()
+      .optional()
+      .nullable()
+      .describe(
+        "The ID of the escrow wallet that will execute the contractMethod. If not provided, the default escrow wallet for the contractMethod will be used",
+      ),
+    memo: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "Optional text supplied when the contractMethod is executed. This can be a note to the user about why the execution was done, or formatted information such as JSON that can be used by the user's system",
+      ),
+    delegatorAddress: z
+      .string()
+      .describe(
+        "The address of the delegator on whose behalf the transaction will be executed",
+      ),
+    value: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error",
+      ),
+  })
+  .describe(
+    "Parameters required to execute a contractMethod as a delegator. Similar to regular execution but executes the transaction on behalf of the specified delegator address",
   );
 
 export const encodeContractMethodSchema = z

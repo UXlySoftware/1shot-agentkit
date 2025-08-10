@@ -31,7 +31,7 @@ export async function POST(
     // 3.Start streaming the agent's response
     const stream = await agent.stream(
       { messages: [{ content: userMessage, role: "user" }] }, // The new message to send to the agent
-      { 
+      {
         configurable: { thread_id: "AgentKit Discussion" }, // Customizable thread ID for tracking conversations
         recursionLimit: 50, // Double the default recursion limit
       },

@@ -21,7 +21,7 @@
     "@metamask/delegation-toolkit": "0.12.0",
     "@solana/web3.js": "^1.98.0",
     "@tanstack/react-query": "^5",
-    "@uxly/1shot-client": "^1.2.1",
+    "@uxly/1shot-client": "^1.2.7",
     "ai": "^4.1.54",
     "bs58": "^6.0.0",
     "next": "14.2.15",
