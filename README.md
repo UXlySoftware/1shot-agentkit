@@ -1,5 +1,10 @@
-# Onchain Agent Powered by AgentKit
+[![Watch the tutorial](https://img.youtube.com/vi/GfjccyW15Yc/maxresdefault.jpg)](https://youtu.be/GfjccyW15Yc)
 
+# 1Shot Prompts Action Provider for AgentKit
+
+This repository implements an Action Provider for the AgentKit onchain agents framework. Specifically, it injects any smart contract imported into the developer's 1Shot API business account as a callable tool with overlayed prompt instructs that can be writted/edited by the developer or other [1Shot Prompts](https://1shotapi.com/prompts) contributors. 
+
+## Development Instructions
 This is a [Next.js](https://nextjs.org) project bootstrapped with `create-onchain-agent`.
 
 It integrates [AgentKit](https://github.com/coinbase/agentkit) to provide AI-driven interactions with on-chain capabilities.
